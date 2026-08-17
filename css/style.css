@@ -1,0 +1,681 @@
+/* ==========================================================================
+   Othello Premium UI Design System & Animations
+   ========================================================================== */
+
+:root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-card: rgba(22, 27, 34, 0.75);
+    --border-color: rgba(255, 255, 255, 0.12);
+    --border-highlight: rgba(255, 255, 255, 0.25);
+    
+    /* Board Colors */
+    --board-wood: #2a1810;
+    --board-wood-border: #4a2818;
+    --board-green: #1b633b;
+    --board-green-dark: #124428;
+    --board-grid: #0d381f;
+    --board-star: #0d381f;
+
+    /* Disc Colors */
+    --disc-black-base: #111115;
+    --disc-black-highlight: #434852;
+    --disc-white-base: #e6e9ef;
+    --disc-white-highlight: #ffffff;
+    --disc-shadow: rgba(0, 0, 0, 0.45);
+
+    /* UI Accents */
+    --accent-emerald: #10b981;
+    --accent-emerald-glow: rgba(16, 185, 129, 0.35);
+    --accent-gold: #f59e0b;
+    --accent-gold-glow: rgba(245, 158, 11, 0.4);
+    --accent-blue: #3b82f6;
+    --accent-danger: #ef4444;
+
+    /* Text */
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --text-muted: #484f58;
+
+    /* Sizing */
+    --cell-size: min(10.5vw, 64px);
+    --board-padding: 12px;
+    --border-radius-lg: 16px;
+    --border-radius-md: 10px;
+    --border-radius-sm: 6px;
+    
+    /* Fonts */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-primary);
+    background-image: 
+        radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 0% 100%, rgba(245, 158, 11, 0.06) 0%, transparent 40%);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 16px;
+    overflow-x: hidden;
+}
+
+/* ==========================================
+   Header & App Title
+   ========================================== */
+.app-header {
+    text-align: center;
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 640px;
+}
+
+.app-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #ffffff 30%, #a7f3d0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.app-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+/* ==========================================
+   Main Game Container Layout
+   ========================================== */
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    max-width: 600px;
+}
+
+/* ==========================================
+   Scoreboard
+   ========================================== */
+.scoreboard {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 12px 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.player-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: var(--border-radius-md);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.player-card.active {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: var(--accent-emerald);
+    box-shadow: 0 0 16px var(--accent-emerald-glow);
+    transform: translateY(-2px);
+}
+
+.player-card.active .player-status {
+    color: var(--accent-emerald);
+    font-weight: 600;
+}
+
+.player-disc-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    box-shadow: 0 4px 8px var(--disc-shadow);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.player-disc-icon.black {
+    background: radial-gradient(circle at 35% 35%, var(--disc-black-highlight), var(--disc-black-base));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.player-disc-icon.white {
+    background: radial-gradient(circle at 35% 35%, var(--disc-white-highlight), var(--disc-white-base));
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.player-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-score {
+    font-size: 1.4rem;
+    font-weight: 800;
+    font-feature-settings: "tnum";
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.player-status {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    transition: color 0.3s;
+}
+
+.vs-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+/* ==========================================
+   Othello Board
+   ========================================== */
+.board-wrapper {
+    position: relative;
+    padding: var(--board-padding);
+    background: linear-gradient(145deg, var(--board-wood-border), var(--board-wood));
+    border-radius: calc(var(--border-radius-lg) + 4px);
+    box-shadow: 
+        0 16px 40px rgba(0, 0, 0, 0.6),
+        inset 0 2px 4px rgba(255, 255, 255, 0.15),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(8, var(--cell-size));
+    grid-template-rows: repeat(8, var(--cell-size));
+    gap: 2px;
+    background-color: var(--board-grid);
+    border: 3px solid var(--board-grid);
+    border-radius: var(--border-radius-sm);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+/* Cell */
+.cell {
+    background: linear-gradient(135deg, var(--board-green), var(--board-green-dark));
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 800px;
+    transition: background 0.2s;
+}
+
+.cell:hover {
+    filter: brightness(1.06);
+}
+
+/* 星（星点）マーカー */
+.cell.star-dot::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: rgba(13, 56, 31, 0.85);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* 直前の着手ハイライト */
+.cell.last-move::before {
+    content: '';
+    position: absolute;
+    width: 85%;
+    height: 85%;
+    border: 2px solid var(--accent-gold);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent-gold-glow);
+    pointer-events: none;
+    z-index: 5;
+    animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.08); opacity: 0.4; }
+}
+
+/* ガイド（配置可能マスの印） */
+.cell.valid-move::after {
+    content: '';
+    position: absolute;
+    width: 28%;
+    height: 28%;
+    background: rgba(255, 255, 255, 0.38);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+    pointer-events: none;
+    z-index: 2;
+    transition: all 0.2s ease;
+    animation: guide-pulse 1.8s infinite ease-in-out;
+}
+
+.cell.valid-move:hover::after {
+    transform: scale(1.6);
+    background: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+}
+
+@keyframes guide-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.25); opacity: 0.95; }
+}
+
+/* ==========================================
+   3D Realistic Reversible Discs
+   ========================================== */
+.disc-container {
+    width: 84%;
+    height: 84%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.45s cubic-bezier(0.4, 0.2, 0.2, 1.2);
+    pointer-events: none;
+}
+
+.disc-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-shadow: 
+        0 4px 10px rgba(0, 0, 0, 0.5),
+        inset 0 1px 3px rgba(255, 255, 255, 0.35),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.disc-face.black {
+    background: radial-gradient(circle at 35% 30%, var(--disc-black-highlight) 0%, var(--disc-black-base) 80%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.disc-face.white {
+    background: radial-gradient(circle at 35% 30%, var(--disc-white-highlight) 0%, var(--disc-white-base) 80%);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    transform: rotateY(180deg);
+}
+
+/* 状態別の回転設定 */
+.disc-container.show-black {
+    transform: rotateY(0deg);
+}
+
+.disc-container.show-white {
+    transform: rotateY(180deg);
+}
+
+/* 新規配置時のバウンスアニメーション */
+.disc-container.placed {
+    animation: place-bounce 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes place-bounce {
+    0% { transform: scale(0.3) translateY(-10px); opacity: 0; }
+    70% { transform: scale(1.12) translateY(0); }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* ==========================================
+   Control Bar & Toolbar
+   ========================================== */
+.controls-card {
+    width: 100%;
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.controls-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--border-highlight);
+    transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--accent-emerald);
+    color: #ffffff;
+    border-color: var(--accent-emerald);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #0ea371;
+    border-color: #0ea371;
+    box-shadow: 0 0 12px var(--accent-emerald-glow);
+}
+
+.btn-icon-only {
+    padding: 8px 10px;
+}
+
+/* Custom Select Dropdowns */
+.select-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.custom-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 8px 28px 8px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    outline: none;
+}
+
+.custom-select:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-highlight);
+}
+
+.custom-select:focus {
+    border-color: var(--accent-emerald);
+    box-shadow: 0 0 0 2px var(--accent-emerald-glow);
+}
+
+.custom-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.select-arrow {
+    position: absolute;
+    right: 10px;
+    pointer-events: none;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+/* ==========================================
+   Toast Notification (Pass, Status alert)
+   ========================================== */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.toast {
+    background: rgba(22, 27, 34, 0.95);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--accent-gold);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px var(--accent-gold-glow);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: toast-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), toast-out 0.3s ease 2.2s forwards;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(-20px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toast-out {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-10px) scale(0.95); }
+}
+
+/* ==========================================
+   Game Over Modal Dialog
+   ========================================== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    padding: 16px;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-card {
+    background: linear-gradient(180deg, #1f2937, #111827);
+    border: 1px solid var(--border-highlight);
+    border-radius: 20px;
+    padding: 28px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    transform: scale(0.85);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-overlay.active .modal-card {
+    transform: scale(1);
+}
+
+.modal-icon {
+    font-size: 3rem;
+    margin-bottom: 8px;
+}
+
+.modal-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, #ffffff, #93c5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.modal-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+.modal-scores {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+}
+
+.modal-score-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.modal-score-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.modal-score-val {
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.modal-actions .btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 0.95rem;
+}
+
+/* ==========================================
+   Canvas Confetti for Victory Celebration
+   ========================================== */
+#confetti-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 150;
+}
+
+/* ==========================================
+   Responsive Adjustments
+   ========================================== */
+@media (max-width: 480px) {
+    body {
+        padding: 10px 8px;
+    }
+
+    .app-title {
+        font-size: 1.5rem;
+    }
+
+    :root {
+        --cell-size: calc((100vw - 44px) / 8);
+        --board-padding: 8px;
+    }
+
+    .scoreboard {
+        padding: 10px;
+        gap: 6px;
+    }
+
+    .player-card {
+        padding: 6px 8px;
+        gap: 8px;
+    }
+
+    .player-score {
+        font-size: 1.2rem;
+    }
+
+    .controls-card {
+        padding: 10px;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>三角比マスター (0°〜180°) - sin, cos, tan クイズ</title>
+    <meta name="description" content="0度から180度までの三角比（sin, cos, tan）を半円・単位円と合わせて楽しく学べるスピードクイズ＆特訓Webアプリ">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Main Style -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Header HUD -->
+    <header class="app-header">
+        <div class="brand-area">
+            <span class="brand-icon">📐</span>
+            <h1 class="brand-title">三角比 MASTER</h1>
+        </div>
+
+        <div class="header-stats">
+            <div id="header-streak" class="stat-pill" title="連続正解数">🔥 0</div>
+            <div id="header-score" class="stat-pill" title="スコア">🎯 0</div>
+        </div>
+
+        <div class="header-actions">
+            <a href="../index.html" class="btn" title="オセロゲームへ切り替え" style="text-decoration: none;">
+                ⚫⚪ オセロへ
+            </a>
+            <button id="btn-reference" class="btn" title="三角比早見表・単位円">
+                📖 早見表
+            </button>
+            <button id="btn-sound" class="btn active" title="効果音切り替え">
+                🔊 サウンド
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+
+        <!-- ==========================================
+             1. Start & Settings Screen
+             ========================================== -->
+        <section id="start-screen" class="screen-view active">
+            <div class="settings-card">
+                <!-- Mode Selection -->
+                <div class="settings-group">
+                    <div class="settings-section-title">
+                        <span>🎮</span> モードを選択
+                    </div>
+                    <div class="mode-tabs-grid">
+                        <div class="mode-tab active" data-mode="10-challenge">
+                            <span class="mode-icon">⚡</span>
+                            <span class="mode-name">10問チャレンジ</span>
+                            <span class="mode-desc">制限時間付きでスコアアタック</span>
+                        </div>
+                        <div class="mode-tab" data-mode="endless">
+                            <span class="mode-icon">🔥</span>
+                            <span class="mode-name">エンドレス特訓</span>
+                            <span class="mode-desc">3ミス終了のサバイバル</span>
+                        </div>
+                        <div class="mode-tab" data-mode="practice">
+                            <span class="mode-icon">📖</span>
+                            <span class="mode-name">じっくり練習</span>
+                            <span class="mode-desc">時間制限なしで復習</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Answer Input Type -->
+                <div class="settings-group">
+                    <div class="settings-section-title">
+                        <span>✏️</span> 回答スタイル
+                    </div>
+                    <div class="options-group">
+                        <label class="pill-option">
+                            <input type="radio" name="answer-type" value="choice4" checked>
+                            <span class="pill-label">4択クイック選択</span>
+                        </label>
+                        <label class="pill-option">
+                            <input type="radio" name="answer-type" value="palette">
+                            <span class="pill-label">数式パレット入力 (本格派)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Target Functions -->
+                <div class="settings-group">
+                    <div class="settings-section-title">
+                        <span>🎯</span> 出題する三角比
+                    </div>
+                    <div class="options-group">
+                        <label class="pill-option">
+                            <input type="checkbox" name="filter-func" value="sin" checked>
+                            <span class="pill-label" style="color: var(--color-sin); font-weight: 700;">sin (正弦)</span>
+                        </label>
+                        <label class="pill-option">
+                            <input type="checkbox" name="filter-func" value="cos" checked>
+                            <span class="pill-label" style="color: var(--color-cos); font-weight: 700;">cos (余弦)</span>
+                        </label>
+                        <label class="pill-option">
+                            <input type="checkbox" name="filter-func" value="tan" checked>
+                            <span class="pill-label" style="color: var(--color-tan); font-weight: 700;">tan (正接)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Angle Range -->
+                <div class="settings-group">
+                    <div class="settings-section-title">
+                        <span>🧭</span> 角度の範囲
+                    </div>
+                    <div class="options-group">
+                        <label class="pill-option">
+                            <input type="radio" name="angle-range" value="180" checked>
+                            <span class="pill-label">0° 〜 180° (標準 全9角)</span>
+                        </label>
+                        <label class="pill-option">
+                            <input type="radio" name="angle-range" value="90">
+                            <span class="pill-label">0° 〜 90° (基礎 鋭角のみ)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Time Limit Setting (解答時間設定: 3秒, 5秒, 10秒, なし) -->
+                <div class="settings-group" id="time-limit-group">
+                    <div class="settings-section-title">
+                        <span>⏱️</span> 1問あたりの解答時間
+                    </div>
+                    <div class="options-group">
+                        <label class="pill-option">
+                            <input type="radio" name="time-limit" value="3">
+                            <span class="pill-label">3秒 (超高速)</span>
+                        </label>
+                        <label class="pill-option">
+                            <input type="radio" name="time-limit" value="5">
+                            <span class="pill-label">5秒 (高速)</span>
+                        </label>
+                        <label class="pill-option">
+                            <input type="radio" name="time-limit" value="10" checked>
+                            <span class="pill-label">10秒 (標準)</span>
+                        </label>
+                        <label class="pill-option">
+                            <input type="radio" name="time-limit" value="0">
+                            <span class="pill-label">なし (無制限)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Notation Format Toggle -->
+                <div class="toggle-row">
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.95rem;">分母を有理化して表示</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">例: 1/√2 ⇄ √2/2, 1/√3 ⇄ √3/3</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-rationalize">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Start Button -->
+                <button id="btn-start-quiz" class="btn btn-primary btn-large">
+                    クイズをスタート！ 🚀
+                </button>
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             2. Quiz Playing Screen
+             ========================================== -->
+        <section id="quiz-screen" class="screen-view">
+            <!-- Quiz HUD Bar -->
+            <div class="quiz-hud">
+                <div id="quiz-mode-badge" class="quiz-badge">⚡ 10問スピードチャレンジ</div>
+                <div id="quiz-progress-text" class="quiz-progress-text">第 1 / 10 問</div>
+            </div>
+
+            <!-- Progress & Timer Bars -->
+            <div class="progress-track">
+                <div id="quiz-progress-bar" class="progress-fill"></div>
+            </div>
+            <div id="timer-container" class="timer-track">
+                <div id="timer-bar" class="timer-fill"></div>
+            </div>
+            <div id="lives-container" style="display: none; align-items: center; justify-content: flex-end; gap: 4px; font-size: 1.1rem;">
+                <span id="lives-display">❤️❤️❤️</span>
+            </div>
+
+            <!-- Main Question Card -->
+            <div class="quiz-main-card">
+                <!-- Combo Streak Floating Badge -->
+                <div id="combo-badge" class="combo-badge">2 COMBO!! 🔥</div>
+
+                <!-- Question Formula -->
+                <div class="question-display">
+                    <span id="question-func" class="q-func func-sin">sin</span>
+                    <span id="question-angle" class="q-angle">135°</span>
+                    <span class="q-equals">=</span>
+                    <span class="q-question">?</span>
+                </div>
+
+                <!-- Unit Circle Semicircle Visualizer (0° to 180°) -->
+                <div id="quiz-unit-circle" class="unit-circle-wrapper"></div>
+
+                <!-- 4-Choice Buttons Grid -->
+                <div id="choices-container" class="choices-grid">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <!-- 2-Row Palette Buttons Container -->
+                <div id="palette-container" class="palette-container" style="display: none;">
+                    <!-- Dynamically populated into Row 1 (sin/cos) and Row 2 (tan) -->
+                </div>
+
+                <!-- Step-by-Step Mathematical Explanation -->
+                <div id="explanation-card" class="explanation-card">
+                    <div id="explanation-text"></div>
+                </div>
+
+                <!-- Card Footer (Next & Quit) -->
+                <div class="quiz-footer">
+                    <button id="btn-quit-quiz" class="btn">中断する</button>
+                    <button id="btn-next-question" class="btn btn-primary" style="display: none;">
+                        次の問題へ (自動で進みます) ➔
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==========================================
+             3. Result Screen
+             ========================================== -->
+        <section id="result-screen" class="screen-view">
+            <div class="result-card">
+                <div id="result-rank-badge" class="rank-badge rank-s">S</div>
+                <h2>クイズ結果発表！</h2>
+
+                <div class="result-stats-grid">
+                    <div class="result-stat-item">
+                        <div class="result-stat-label">スコア</div>
+                        <div id="result-score-text" class="result-stat-value">1,420</div>
+                    </div>
+                    <div class="result-stat-item">
+                        <div class="result-stat-label">正答率</div>
+                        <div id="result-accuracy-text" class="result-stat-value">100% (10/10)</div>
+                    </div>
+                    <div class="result-stat-item">
+                        <div class="result-stat-label">最大連続正解</div>
+                        <div id="result-max-streak-text" class="result-stat-value">10 回</div>
+                    </div>
+                </div>
+
+                <!-- Detailed History Breakdown -->
+                <h3 style="align-self: flex-start; font-size: 1rem; color: var(--text-secondary); margin-top: 4px;">解答振り返り</h3>
+                <div id="result-history-list" class="result-history-container">
+                    <!-- Dynamically populated -->
+                </div>
+
+                <div class="result-actions">
+                    <button id="btn-restart-quiz" class="btn btn-primary btn-large">もう一度挑戦 🔄</button>
+                    <button id="btn-back-to-home" class="btn btn-large">ホームに戻る 🏠</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==========================================
+         4. Reference Modal (早見表 & 単位円)
+         ========================================== -->
+    <div id="reference-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="ref-modal-title">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="ref-modal-title" class="modal-title">📖 三角比早見表 (0°〜180°)</h2>
+                <button id="btn-close-reference" class="btn btn-icon-only">✕</button>
+            </div>
+
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                表の行をクリックすると、単位円（半円）上の対応する角度・成分が右側にハイライト表示されます。
+            </p>
+
+            <div class="reference-layout">
+                <!-- Table -->
+                <div class="reference-table-container">
+                    <table class="reference-table">
+                        <thead>
+                            <tr>
+                                <th>θ (度)</th>
+                                <th style="color: var(--color-sin);">sin θ</th>
+                                <th style="color: var(--color-cos);">cos θ</th>
+                                <th style="color: var(--color-tan);">tan θ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reference-table-body">
+                            <!-- Dynamically populated -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Unit Circle Preview -->
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div id="reference-unit-circle" class="unit-circle-wrapper"></div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 6px;">
+                        赤線: sin (y座標) / 青線: cos (x座標) / 緑線: tan (傾き)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Scripts -->
+    <script src="js/trig-data.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/unit-circle.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
