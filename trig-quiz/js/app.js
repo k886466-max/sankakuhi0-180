@@ -9,7 +9,7 @@ class TrigQuizApp {
         this.referenceVisualizer = null;
 
         // Settings State
-        this.mode = '10-challenge'; // '10-challenge' | 'endless' | 'practice'
+        this.mode = '20-challenge'; // '20-challenge' | '50-timetrial' | 'practice'
         this.answerType = 'choice4'; // 'choice4' | 'palette'
         this.targetFunctions = ['sin', 'cos', 'tan']; // Array of selected functions
         this.angleRange = '180'; // '180' (0~180°) or '90' (0~90°)
@@ -19,13 +19,18 @@ class TrigQuizApp {
         // Quiz State
         this.currentQuestion = null;
         this.questionIndex = 0;
-        this.totalQuestions = 10;
+        this.totalQuestions = 20;
         this.score = 0;
         this.streak = 0;
         this.maxStreak = 0;
         this.lives = 3;
         this.isAnswered = false;
-        this.history = []; // Array of { q, selected, correct, isCorrect, timeMs }
+        this.history = []; // Array of { angle, func, selected, correct, isCorrect, timeTakenMs }
+        this.nickname = ''; // player nickname for leaderboard
+        // Dual answer state
+        this.selectedAngle = null; // angle chosen on unit‑circle
+        this.selectedChoiceId = null; // valueId chosen from 4‑choice
+        this.clickedChoiceBtn = null; // reference to the button element
         this.timerInterval = null;
         this.autoAdvanceTimer = null;
         this.timeLeft = 10;
@@ -86,6 +91,8 @@ class TrigQuizApp {
             referenceTableBody: document.getElementById('reference-table-body'),
             btnCloseReference: document.getElementById('btn-close-reference'),
 
+            leaderboardList: document.getElementById('leaderboard-list'),
+            nicknameInput: document.getElementById('nickname-input'),
             // Confetti
             confettiCanvas: document.getElementById('confetti-canvas')
         };
@@ -94,8 +101,8 @@ class TrigQuizApp {
     }
 
     init() {
-        // 単位円の点クリックで直接回答できるコールバックを登録
-        this.visualizer = new UnitCircleVisualizer('quiz-unit-circle', (deg, pointEl) => this.handlePointAnswer(deg, pointEl));
+        // 単位円の点クリックでの選択コールバックを登録
+        this.visualizer = new UnitCircleVisualizer('quiz-unit-circle', (deg, pointEl) => this.handleCircleSelect(deg, pointEl));
         this.referenceVisualizer = new UnitCircleVisualizer('reference-unit-circle');
 
         this.bindEvents();
@@ -226,7 +233,7 @@ class TrigQuizApp {
         // Keyboard navigation
         window.addEventListener('keydown', (e) => {
             if (this.dom.quizScreen.classList.contains('active')) {
-                if (!this.isAnswered && this.answerType === 'choice4') {
+                if (!this.isAnswered) {
                     if (['1', '2', '3', '4'].includes(e.key)) {
                         const index = parseInt(e.key) - 1;
                         const buttons = this.dom.choicesContainer.querySelectorAll('.choice-btn');
@@ -285,22 +292,26 @@ class TrigQuizApp {
         this.lives = 3;
         this.history = [];
         this.isAnswered = false;
+        this.nickname = (this.dom.nicknameInput && this.dom.nicknameInput.value.trim()) || '匿名希望';
 
         // UI Setup for Mode
         this.dom.headerStreak.textContent = `🔥 0`;
         this.dom.headerScore.textContent = `🎯 0`;
 
-        if (this.mode === '10-challenge') {
+        if (this.mode === '20-challenge') {
+            this.totalQuestions = 20;
             const timeDesc = this.timeLimitSetting > 0 ? ` (${this.timeLimitSetting}秒/問)` : ' (時間無制限)';
-            this.dom.quizModeBadge.textContent = `⚡ 10問スピードチャレンジ${timeDesc}`;
+            this.dom.quizModeBadge.textContent = `⚡ 20問コース${timeDesc}`;
             this.dom.timerContainer.style.display = this.timeLimitSetting > 0 ? 'block' : 'none';
             this.dom.livesContainer.style.display = 'none';
             this.timePerQuestion = this.timeLimitSetting > 0 ? this.timeLimitSetting : 10;
-        } else if (this.mode === 'endless') {
-            this.dom.quizModeBadge.textContent = '🔥 エンドレス特訓 (3ライフ)';
-            this.dom.timerContainer.style.display = 'none';
-            this.dom.livesContainer.style.display = 'flex';
-            this.updateLivesDisplay();
+        } else if (this.mode === '50-timetrial') {
+            this.totalQuestions = 50;
+            const timeDesc = this.timeLimitSetting > 0 ? ` (${this.timeLimitSetting}秒/問)` : ' (時間無制限)';
+            this.dom.quizModeBadge.textContent = `🔥 50問タイムトライアル${timeDesc}`;
+            this.dom.timerContainer.style.display = this.timeLimitSetting > 0 ? 'block' : 'none';
+            this.dom.livesContainer.style.display = 'none';
+            this.timePerQuestion = this.timeLimitSetting > 0 ? this.timeLimitSetting : 10;
         } else {
             this.dom.quizModeBadge.textContent = '📖 じっくり練習';
             this.dom.timerContainer.style.display = 'none';
@@ -323,7 +334,7 @@ class TrigQuizApp {
         this.clearAutoAdvance();
 
         // Check game end conditions
-        if (this.mode === '10-challenge' && this.questionIndex >= this.totalQuestions) {
+        if ((this.mode === '20-challenge' || this.mode === '50-timetrial') && this.questionIndex >= this.totalQuestions) {
             this.finishQuiz();
             return;
         }
@@ -334,11 +345,15 @@ class TrigQuizApp {
 
         this.questionIndex++;
         this.isAnswered = false;
+        // Reset dual-answer state for new question
+        this.selectedAngle = null;
+        this.selectedChoiceId = null;
+        this.clickedChoiceBtn = null;
         this.dom.explanationCard.classList.remove('active');
         this.dom.btnNextQuestion.style.display = 'none';
 
         // Update progress bar
-        if (this.mode === '10-challenge') {
+        if (this.mode === '20-challenge' || this.mode === '50-timetrial') {
             this.dom.quizProgressText.textContent = `第 ${this.questionIndex} / ${this.totalQuestions} 問`;
             this.dom.quizProgressBar.style.width = `${((this.questionIndex - 1) / this.totalQuestions) * 100}%`;
         } else {
@@ -387,20 +402,34 @@ class TrigQuizApp {
         // Question display
         this.dom.questionFunc.textContent = `${this.currentQuestion.func}`;
         this.dom.questionFunc.className = `q-func func-${this.currentQuestion.func}`;
+        // Show the angle so user knows which position to select on the unit circle
         this.dom.questionAngle.textContent = `${this.currentQuestion.angle}°`;
 
-        // 単位円は出題中は角度・三角形を伏せ、位置選択可能なポイントを表示
+        // Unit circle: hide dynamic layer, enable interactive points
         this.visualizer.hideDynamic();
 
-        // Render answer inputs
-        if (this.answerType === 'choice4') {
-            this.dom.choicesContainer.style.display = 'grid';
-            this.dom.paletteContainer.style.display = 'none';
-            this.render4Choices();
+        // Dual mode: always show 4-choice panel alongside unit circle
+        this.dom.choicesContainer.style.display = 'grid';
+        this.dom.paletteContainer.style.display = 'none';
+        this.render4Choices();
+
+        // Show hint prompt
+        this.updateDualHint();
+    }
+
+    updateDualHint() {
+        const circleOk = this.selectedAngle !== null;
+        const choiceOk = this.selectedChoiceId !== null;
+        let hintEl = document.getElementById('dual-hint');
+        if (!hintEl) return;
+        if (circleOk && choiceOk) {
+            hintEl.textContent = '✅ 両方選択済み — 採点中...';
+        } else if (circleOk) {
+            hintEl.textContent = '☑️ 位置 選択済 ／ 📋 下の値を選んでください';
+        } else if (choiceOk) {
+            hintEl.textContent = '📋 値 選択済 ／ ☑️ 単位円上で角度の位置を選んでください';
         } else {
-            this.dom.choicesContainer.style.display = 'none';
-            this.dom.paletteContainer.style.display = 'flex';
-            this.renderPalette();
+            hintEl.textContent = '① 単位円上で角度の位置を選択  ② 下の値を選択 → 両方揃うと採点';
         }
     }
 
@@ -435,7 +464,7 @@ class TrigQuizApp {
                 <span class="choice-num">${idx + 1}</span>
                 <span class="choice-val">${window.formatValueHtml(valueId, this.useRationalized)}</span>
             `;
-            btn.addEventListener('click', () => this.handleAnswer(valueId, btn));
+            btn.addEventListener('click', () => this.handleChoiceSelect(valueId, btn));
             this.dom.choicesContainer.appendChild(btn);
         });
     }
@@ -492,7 +521,7 @@ class TrigQuizApp {
         this.stopTimer();
         this.questionStartTime = Date.now();
 
-        if (this.mode !== '10-challenge' || this.timeLimitSetting <= 0) return;
+        if ((this.mode !== '20-challenge' && this.mode !== '50-timetrial') || this.timeLimitSetting <= 0) return;
 
         this.timeLeft = this.timePerQuestion;
         this.dom.timerBar.style.width = '100%';
@@ -529,74 +558,94 @@ class TrigQuizApp {
         }
     }
 
-    // 単位円上の点をクリックして回答
-    handlePointAnswer(deg, pointEl) {
+    // ========== DUAL ANSWER MODE ==========
+    // ユーザーが単位円上の点をクリックしたとき
+    handleCircleSelect(deg, pointEl) {
         if (this.isAnswered) return;
-        const isMatchAngle = (deg === this.currentQuestion.angle);
-        const selectedValueId = isMatchAngle 
-            ? this.currentQuestion.correctValueId 
-            : window.TRIG_DATA[deg][this.currentQuestion.func].valueId;
+        this.selectedAngle = deg;
 
-        this.handleAnswer(selectedValueId, null, deg);
+        // ポイントの見た目を選択状態にする
+        this.visualizer.container.querySelectorAll('.circle-point-group').forEach(g => g.classList.remove('selected'));
+        pointEl.classList.add('selected');
+
+        this.updateDualHint();
+        this.tryFinalizeAnswer();
     }
 
-    // 解答処理（選択肢ボタンまたは単位円タップのどちらでも実行）
-    handleAnswer(selectedValueId, clickedBtn = null, clickedAngle = null) {
+    // ユーザーが4択ボタンをクリックしたとき
+    handleChoiceSelect(valueId, btn) {
         if (this.isAnswered) return;
+        this.selectedChoiceId = valueId;
+        this.clickedChoiceBtn = btn;
+
+        // ボタンの見た目を選択状態にする
+        this.dom.choicesContainer.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+
+        this.updateDualHint();
+        this.tryFinalizeAnswer();
+    }
+
+    // 両方の選択が揃ったら採点実行
+    tryFinalizeAnswer() {
+        if (this.isAnswered) return;
+        if (this.selectedAngle === null || this.selectedChoiceId === null) return;
+
         this.isAnswered = true;
         this.stopTimer();
         this.clearAutoAdvance();
 
         const timeTakenMs = Date.now() - this.questionStartTime;
-        
-        // 正誤判定（単位円タップ時は角度一致、ボタンタップ時は値一致）
-        const isCorrect = (clickedAngle !== null)
-            ? (clickedAngle === this.currentQuestion.angle)
-            : (selectedValueId === this.currentQuestion.correctValueId);
+
+        // 両方正解でないと不正解
+        const circleCorrect = (this.selectedAngle === this.currentQuestion.angle);
+        const valueCorrect = (this.selectedChoiceId === this.currentQuestion.correctValueId);
+        const isCorrect = circleCorrect && valueCorrect;
 
         // Record history
         this.history.push({
             angle: this.currentQuestion.angle,
             func: this.currentQuestion.func,
-            selected: selectedValueId,
+            selectedAngle: this.selectedAngle,
+            selected: this.selectedChoiceId,
             correct: this.currentQuestion.correctValueId,
             isCorrect,
+            circleCorrect,
+            valueCorrect,
             timeTakenMs
         });
 
-        // 4択またはパレットボタンのハイライト
-        if (this.answerType === 'choice4') {
-            const allBtns = this.dom.choicesContainer.querySelectorAll('.choice-btn');
-            allBtns.forEach(btn => {
-                if (btn.dataset.valueId === this.currentQuestion.correctValueId) {
-                    btn.classList.add('correct');
-                } else if (btn === clickedBtn && !isCorrect) {
-                    btn.classList.add('incorrect');
-                }
-                btn.disabled = true;
-            });
-        } else {
-            const allBtns = this.dom.paletteContainer.querySelectorAll('.palette-btn');
-            allBtns.forEach(btn => {
-                if (btn.dataset.valueId === this.currentQuestion.correctValueId) {
-                    btn.classList.add('correct');
-                } else if (btn === clickedBtn && !isCorrect) {
-                    btn.classList.add('incorrect');
-                }
-                btn.disabled = true;
-            });
-        }
+        // 4択ボタンのハイライト
+        this.dom.choicesContainer.querySelectorAll('.choice-btn').forEach(btn => {
+            if (btn.dataset.valueId === this.currentQuestion.correctValueId) {
+                btn.classList.add('correct');
+            } else if (btn === this.clickedChoiceBtn && !valueCorrect) {
+                btn.classList.add('incorrect');
+            }
+            btn.classList.remove('selected');
+            btn.disabled = true;
+        });
 
-        // Handle scoring & audio feedback
+        // 単位円ポイントのハイライト
+        this.visualizer.container.querySelectorAll('.circle-point-group').forEach(grp => {
+            const d = parseInt(grp.dataset.angle, 10);
+            grp.classList.remove('selected');
+            if (d === this.currentQuestion.angle) {
+                grp.classList.add('correct');
+            } else if (d === this.selectedAngle && !circleCorrect) {
+                grp.classList.add('incorrect');
+            }
+        });
+
+        // スコア・音声フィードバック
         if (isCorrect) {
             this.streak++;
             this.maxStreak = Math.max(this.maxStreak, this.streak);
-            const speedBonus = this.timeLimitSetting > 0 
+            const speedBonus = this.timeLimitSetting > 0
                 ? Math.max(0, Math.floor((this.timePerQuestion * 1000 - timeTakenMs) / 100))
                 : 40;
             const streakBonus = this.streak * 20;
-            const points = 100 + speedBonus + streakBonus;
-            this.score += points;
+            this.score += 100 + speedBonus + streakBonus;
 
             if (this.streak >= 2) {
                 this.audio.playStreak(this.streak);
@@ -613,43 +662,89 @@ class TrigQuizApp {
             }
         }
 
-        // Update header stats
         this.dom.headerStreak.textContent = `🔥 ${this.streak}`;
         this.dom.headerScore.textContent = `🎯 ${this.score}`;
 
-        // 答え合わせ：ここで単位円（半円）に角度・直角三角形・座標・成分値を大きくアニメーション表示！
-        this.visualizer.update(this.currentQuestion.angle, this.currentQuestion.func, clickedAngle);
+        // 角度と解答を単位円に表示（解答と同時に単位円展開）
+        this.visualizer.update(this.currentQuestion.angle, this.currentQuestion.func, this.selectedAngle);
 
-        // Show Explanation
+        // 解説カードを表示
+        const circleMsg = circleCorrect ? '✅ 位置正解' : `❌ 位置不正解（正解: ${this.currentQuestion.angle}°）`;
+        const valueMsg = valueCorrect ? '✅ 値正解' : `❌ 値不正解`;
         this.dom.explanationText.innerHTML = `
             <p><strong>${this.currentQuestion.func} ${this.currentQuestion.angle}° = ${window.formatValueHtml(this.currentQuestion.correctValueId, this.useRationalized)}</strong></p>
+            <p style="font-size:0.85em; color:#64748b; margin-top:4px;">${circleMsg} ／ ${valueMsg}</p>
             <p>${this.currentQuestion.explanation}</p>
         `;
         this.dom.explanationCard.classList.add('active');
         this.dom.btnNextQuestion.style.display = 'inline-flex';
 
-        // 次の問題への自動遷移（1.6秒後に自動で進む、またはボタン即時クリック）
+        // ヒント表示を更新
+        let hintEl = document.getElementById('dual-hint');
+        if (hintEl) hintEl.textContent = isCorrect ? '🎉 両方正解！' : '😢 不正解 — 単位円と値の両方が合っている必要があります';
+
+        // Auto-advance: update conditions for new modes
         if (this.mode === 'endless' && this.lives <= 0) {
             this.dom.btnNextQuestion.textContent = '結果を見る ➔';
-            this.autoAdvanceTimer = setTimeout(() => {
-                this.nextQuestion();
-            }, 1800);
-        } else if (this.mode === '10-challenge' && this.questionIndex >= this.totalQuestions) {
+            this.autoAdvanceTimer = setTimeout(() => this.nextQuestion(), 1800);
+        } else if ((this.mode === '20-challenge' || this.mode === '50-timetrial') && this.questionIndex >= this.totalQuestions) {
             this.dom.btnNextQuestion.textContent = '結果発表へ ➔';
-            this.autoAdvanceTimer = setTimeout(() => {
-                this.nextQuestion();
-            }, 1800);
+            this.autoAdvanceTimer = setTimeout(() => this.nextQuestion(), 1800);
         } else {
             this.dom.btnNextQuestion.textContent = '次の問題へ (自動で進みます) ➔';
-            this.autoAdvanceTimer = setTimeout(() => {
-                this.nextQuestion();
-            }, 1500);
+            this.autoAdvanceTimer = setTimeout(() => this.nextQuestion(), 2000);
         }
     }
 
     handleTimeout() {
         if (this.isAnswered) return;
-        this.handleAnswer('TIMEOUT', null);
+        // 時間切れ：選択していない分をnullのまま採点（両方nullなので不正解）
+        if (this.selectedAngle === null) this.selectedAngle = -1; // invalid
+        if (this.selectedChoiceId === null) this.selectedChoiceId = 'TIMEOUT';
+        this.isAnswered = true;
+        this.stopTimer();
+        this.clearAutoAdvance();
+
+        const timeTakenMs = Date.now() - this.questionStartTime;
+        this.history.push({
+            angle: this.currentQuestion.angle,
+            func: this.currentQuestion.func,
+            selectedAngle: this.selectedAngle,
+            selected: this.selectedChoiceId,
+            correct: this.currentQuestion.correctValueId,
+            isCorrect: false,
+            circleCorrect: false,
+            valueCorrect: false,
+            timeTakenMs
+        });
+
+        this.streak = 0;
+        this.audio.playIncorrect();
+        if (this.mode === 'endless') { this.lives--; this.updateLivesDisplay(); }
+
+        this.dom.headerStreak.textContent = `🔥 ${this.streak}`;
+        this.dom.headerScore.textContent = `🎯 ${this.score}`;
+
+        this.visualizer.update(this.currentQuestion.angle, this.currentQuestion.func, null);
+
+        this.dom.explanationText.innerHTML = `
+            <p><strong>時間切れ！</strong> 正解: ${this.currentQuestion.func} ${this.currentQuestion.angle}° = ${window.formatValueHtml(this.currentQuestion.correctValueId, this.useRationalized)}</p>
+            <p>${this.currentQuestion.explanation}</p>
+        `;
+        this.dom.explanationCard.classList.add('active');
+        this.dom.btnNextQuestion.style.display = 'inline-flex';
+        this.dom.choicesContainer.querySelectorAll('.choice-btn').forEach(b => { b.disabled = true; });
+
+        if (this.mode === 'endless' && this.lives <= 0) {
+            this.dom.btnNextQuestion.textContent = '結果を見る ➔';
+            this.autoAdvanceTimer = setTimeout(() => this.nextQuestion(), 1800);
+        } else if ((this.mode === '20-challenge' || this.mode === '50-timetrial') && this.questionIndex >= this.totalQuestions) {
+            this.dom.btnNextQuestion.textContent = '結果発表へ ➔';
+            this.autoAdvanceTimer = setTimeout(() => this.nextQuestion(), 1800);
+        } else {
+            this.dom.btnNextQuestion.textContent = '次の問題へ (自動で進みます) ➔';
+            this.autoAdvanceTimer = setTimeout(() => this.nextQuestion(), 2000);
+        }
     }
 
     showComboAnimation(combo) {
@@ -676,7 +771,7 @@ class TrigQuizApp {
         // Rank determination
         let rank = 'C';
         let rankClass = 'rank-c';
-        if (accuracy === 100 && total >= 10) {
+        if (accuracy === 100 && total >= 20) {
             rank = 'S+';
             rankClass = 'rank-s-plus';
         } else if (accuracy >= 90) {
@@ -714,11 +809,67 @@ class TrigQuizApp {
             this.dom.resultHistoryList.appendChild(item);
         });
 
+        // Save to leaderboard and render
+        this.saveToLeaderboard(this.nickname, this.score, accuracy, this.mode);
+        this.renderLeaderboard();
+
         // Fanfare & Confetti on S rank
         if (accuracy >= 80) {
             this.audio.playFanfare();
             this.launchConfetti();
         }
+    }
+
+    // ==========================================
+    // Leaderboard (localStorage)
+    // ==========================================
+
+    getLeaderboard() {
+        try {
+            return JSON.parse(localStorage.getItem('trig-quiz-leaderboard') || '[]');
+        } catch { return []; }
+    }
+
+    saveToLeaderboard(nickname, score, accuracy, mode) {
+        const lb = this.getLeaderboard();
+        lb.push({
+            nickname: nickname || '匿名希望',
+            score,
+            accuracy,
+            mode,
+            date: new Date().toLocaleDateString('ja-JP')
+        });
+        // Sort descending by score, keep top 10 per mode or overall top 10
+        lb.sort((a, b) => b.score - a.score);
+        const top = lb.slice(0, 10);
+        localStorage.setItem('trig-quiz-leaderboard', JSON.stringify(top));
+    }
+
+    renderLeaderboard() {
+        const lb = this.getLeaderboard();
+        const el = this.dom.leaderboardList;
+        if (!el) return;
+
+        if (lb.length === 0) {
+            el.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:12px;">まだ記録がありません</p>';
+            return;
+        }
+
+        const medals = ['🥇', '🥈', '🥉'];
+        el.innerHTML = lb.map((entry, i) => {
+            const medal = medals[i] || `${i + 1}位`;
+            const modeLabel = entry.mode === '20-challenge' ? '20問' :
+                              entry.mode === '50-timetrial' ? '50問タイム' : '練習';
+            const isMe = (entry.nickname === this.nickname && i === lb.findIndex(e => e.nickname === this.nickname && e.score === this.score));
+            return `
+                <div class="lb-row ${isMe ? 'lb-row-me' : ''} ${i < 3 ? 'lb-top3' : ''}">
+                    <span class="lb-rank">${medal}</span>
+                    <span class="lb-name">${entry.nickname}</span>
+                    <span class="lb-score">${entry.score.toLocaleString()}点</span>
+                    <span class="lb-meta">${entry.accuracy}% ・ ${modeLabel} ・ ${entry.date}</span>
+                </div>
+            `;
+        }).join('');
     }
 
     launchConfetti() {

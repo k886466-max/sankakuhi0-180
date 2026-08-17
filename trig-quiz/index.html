@@ -53,15 +53,15 @@
                         <span>🎮</span> モードを選択
                     </div>
                     <div class="mode-tabs-grid">
-                        <div class="mode-tab active" data-mode="10-challenge">
+                        <div class="mode-tab active" data-mode="20-challenge">
                             <span class="mode-icon">⚡</span>
-                            <span class="mode-name">10問チャレンジ</span>
+                            <span class="mode-name">20問コース</span>
                             <span class="mode-desc">制限時間付きでスコアアタック</span>
                         </div>
-                        <div class="mode-tab" data-mode="endless">
+                        <div class="mode-tab" data-mode="50-timetrial">
                             <span class="mode-icon">🔥</span>
-                            <span class="mode-name">エンドレス特訓</span>
-                            <span class="mode-desc">3ミス終了のサバイバル</span>
+                            <span class="mode-name">50問タイムトライアル</span>
+                            <span class="mode-desc">50問連続スピードチャレンジ</span>
                         </div>
                         <div class="mode-tab" data-mode="practice">
                             <span class="mode-icon">📖</span>
@@ -163,6 +163,15 @@
                     </label>
                 </div>
 
+                <!-- Nickname Input -->
+                <div class="settings-group" id="nickname-group">
+                    <div class="settings-section-title">
+                        <span>👤</span> ニックネーム（ランキング用）
+                    </div>
+                    <input type="text" id="nickname-input" class="nickname-input"
+                           placeholder="ニックネームを入力（最大10文字）" maxlength="10" autocomplete="off">
+                </div>
+
                 <!-- Start Button -->
                 <button id="btn-start-quiz" class="btn btn-primary btn-large">
                     クイズをスタート！ 🚀
@@ -207,6 +216,9 @@
 
                 <!-- Unit Circle Semicircle Visualizer (0° to 180°) -->
                 <div id="quiz-unit-circle" class="unit-circle-wrapper"></div>
+
+                <!-- Dual Answer Hint (shows which parts have been selected) -->
+                <div id="dual-hint" class="dual-hint">① 単位円上で角度の位置を選択  ② 下の値を選択 → 両方揃うと採点</div>
 
                 <!-- 4-Choice Buttons Grid -->
                 <div id="choices-container" class="choices-grid">
@@ -261,6 +273,14 @@
                 <h3 style="align-self: flex-start; font-size: 1rem; color: var(--text-secondary); margin-top: 4px;">解答振り返り</h3>
                 <div id="result-history-list" class="result-history-container">
                     <!-- Dynamically populated -->
+                </div>
+
+                <!-- Leaderboard -->
+                <div class="leaderboard-section">
+                    <h3 class="leaderboard-title">🏆 ランキング TOP 10</h3>
+                    <div id="leaderboard-list" class="leaderboard-list">
+                        <!-- Dynamically populated -->
+                    </div>
                 </div>
 
                 <div class="result-actions">

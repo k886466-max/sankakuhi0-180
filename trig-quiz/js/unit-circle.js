@@ -72,10 +72,10 @@ class UnitCircleVisualizer {
                 <text x="-8" y="-142" class="axis-label" text-anchor="end">y</text>
                 <text x="-8" y="14" class="axis-label origin" text-anchor="end">O</text>
                 
-                <!-- Axis tick labels (Clean spacing below and left of axes) -->
-                <text x="${this.R}" y="14" class="axis-val-label" text-anchor="middle">1</text>
-                <text x="${-this.R}" y="14" class="axis-val-label" text-anchor="middle">-1</text>
-                <text x="-8" y="${-this.R + 3}" class="axis-val-label" text-anchor="end">1</text>
+                <!-- Axis tick labels (placed clearly outside the arc, away from axes) -->
+                <text x="${this.R + 4}" y="18" class="axis-val-label" text-anchor="start">1</text>
+                <text x="${-this.R - 4}" y="18" class="axis-val-label" text-anchor="end">-1</text>
+                <text x="-14" y="${-this.R + 3}" class="axis-val-label" text-anchor="end">1</text>
 
                 <!-- Unit Semicircle (0° to 180°) -->
                 <path d="M ${this.R} 0 A ${this.R} ${this.R} 0 0 0 ${-this.R} 0" class="circle-path" />
@@ -176,13 +176,19 @@ class UnitCircleVisualizer {
             `;
         }
 
-        // 外周の角度目盛りラベル（単位円にぴったり沿った位置）
+        // Angle labels: place near arc, with fine-tuning per angle to avoid axis overlap
         const angleLabels = this.angles.map(d => {
             const r = d * Math.PI / 180;
-            const labelR = this.R + 11; // 単位円から離れすぎない絶妙な距離
-            const lx = Math.cos(r) * labelR;
-            const ly = -Math.sin(r) * labelR;
-            
+            const labelR = this.R + 16; // close to arc
+            let lx = Math.cos(r) * labelR;
+            let ly = -Math.sin(r) * labelR;
+
+            // Fine-tune per angle to avoid axis overlap
+            let offsetX = 0, offsetY = 0;
+            if (d === 0)   { offsetX = 6;  offsetY = 15; } // below right end
+            if (d === 180) { offsetX = -6; offsetY = 15; } // below left end
+            if (d === 90)  { offsetX = 0;  offsetY = -8; } // above
+
             let anchor = 'middle';
             if (d === 0) anchor = 'start';
             else if (d === 180) anchor = 'end';
@@ -191,8 +197,8 @@ class UnitCircleVisualizer {
 
             const isActive = d === deg;
             return `
-                <text x="${lx}" y="${ly + (d === 0 || d === 180 ? 4 : (d === 90 ? -3 : 3))}" 
-                      class="guide-deg-label anim-fade-in ${isActive ? 'active-deg' : ''}" 
+                <text x="${lx + offsetX}" y="${ly + offsetY}"
+                      class="guide-deg-label anim-fade-in ${isActive ? 'active-deg' : ''}"
                       text-anchor="${anchor}">${d}°</text>
             `;
         }).join('');
